@@ -20,35 +20,54 @@ function round(number, increment, offset)
 function dynamicPowerLimit(MPPTpower, BatteryGoal)
 {
     var PowerLimit = BatteryGoal + MPPTpower
-
     return PowerLimit;
 }
 
 
-
-if (SolarOperationMode != null && MultiPlusActiveInput != null) // If input data NOT NULL
+// If input data NOT NULL
+if (SolarOperationMode != null && MultiPlusActiveInput != null)
 {
-    if (MultiPlusActiveInput == 240)                            // If no ACin
+    // If no ACin
+    if (MultiPlusActiveInput == 240)
     {
         return [{payload:2000},{payload:1000}];
     }
-    else                                                        // If Acin is OK
-    {
-        if (SolarOperationMode == 0 || MPPTpower < 30 )                            // If SolarCharger OFF or MPPTpower < 30
+    
+    // If Acin is OK
+    else
+    {   
+        // If SolarCharger NO LIMIT and MPPTpower <= 25
+        if (SolarOperationMode == 2 & MPPTpower <= 25 )
+        {
+            return [{payload:500},null];
+        }
+        // If SolarCharger NO LIMIT and MPPT power > 25 and MPPTpower < 80
+        if (SolarOperationMode == 2 & MPPTpower > 25 & MPPTpower < 80 )
         {
             return [{payload:50},null];
         }
-        else if(SolarOperationMode == 1 & MPPTpower >= 30)                        // If SolarCharger LIMIT
+        
+        // If SolarCharger OFF and MPPTpower < 50
+        else if (SolarOperationMode == 0 & MPPTpower < 50 )
+        {
+            return [{payload:500},null];
+        }
+        
+        // If SolarCharger LIMIT and MPPTpower >= 50
+        else if(SolarOperationMode == 1 & MPPTpower >= 50)
         {
             return [{payload:1000},null];
         }
-        else if(SolarOperationMode == 2 & MPPTpower >= 30)                        // If SolarCharger NO LIMIT
+        
+        // If SolarCharger NO LIMIT and MPPTpower >= 80
+        else if(SolarOperationMode == 2 & MPPTpower >= 80)
         {
             var ACload = ConsumptionL1 - ActualGridsetpoint
             var DynamicLimit = dynamicPowerLimit(MPPTpower, BatteryGoal)
             var result = round(DynamicLimit, increment, offset)
             
-            if (DynamicLimit < ACload)                          // If Inverter power limit is less than ACloads
+            // If Inverter power limit is less than ACloads
+            if (DynamicLimit < ACload)
             {
                 return [{payload:result},null];
             }
@@ -57,10 +76,14 @@ if (SolarOperationMode != null && MultiPlusActiveInput != null) // If input data
                 return [{payload:1000},null];
             }
         }
-        else                                                    // If Solar charger NOT CONNECTED
+        
+        // If Solar charger NOT CONNECTED
+        else
         {
             return [{payload:1000},null]; 
         }
     }
 }
-else return [null,{payload:1000}];                              // If input data IS null
+
+// If input data IS null
+else return [null,{payload:1000}];
